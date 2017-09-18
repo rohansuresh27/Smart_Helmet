@@ -1,0 +1,110 @@
+//I2C_LCD
+#include <Wire.h> // Comes with Arduino IDE
+#include <LiquidCrystal_I2C.h>
+// set the LCD address to 0x27 for a 16 chars 2 line display
+// Set the pins on the I2C chip used for LCD connections:
+// addr, en,rw,rs,d4,d5,d6,d7,bl,blpol
+LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE); // Set the LCD I2C
+address//LCD
+//For BT
+#include <SoftwareSerial.h>
+SoftwareSerial mySerial(9,10);
+char inputString;
+//GYRO >these constants describe the pins. They won't change:
+const int groundpin = 18; // analog input pin 4 -- ground
+const int powerpin = 19; // analog input pin 5 -- voltage
+const int xpin = A3; // x-axis of the accelerometer
+const int ypin = A2; // y-axis
+const int zpin = A1; // z-axis (only on 3-axis models)
+
+int a,b,c ;
+void setup()
+{
+// initialize the serial communications:
+Serial.begin(9600);
+
+
+/* Provide ground and power by using the analog inputs as normal digital pins. This makes
+it
+possible to directly connect the breakout board to the Arduino. If you use the normal 5V
+and
+GND pins on the Arduino, you can remove these lines. */
+
+pinMode(groundpin, OUTPUT);
+pinMode(powerpin, OUTPUT);
+digitalWrite(groundpin, LOW);
+digitalWrite(powerpin, HIGH);
+// set up the LCD's number of columns and rows:
+lcd.begin(16, 2);
+lcd.print("Smart Helmet");
+mySerial.begin(9600);
+pinMode(13, OUTPUT);
+}
+
+void loop()
+{
+if(mySerial.available()>0)
+{
+inputString= mySerial.read(); //read the input
+Serial.println(inputString);
+}
+a=analogRead(xpin);
+b=analogRead(ypin);
+c=analogRead(zpin);
+delay(100);
+
+// TO PRINT GYRO VALUES IF NECESSARY
+Serial.print(a);
+// print a tab between values:
+Serial.print("\t");
+Serial.print(b);
+// print a tab between values
+Serial.print("\t");
+Serial.print(c);
+Serial.println();
+// delay before next reading:
+delay(100);
+
+
+if(inputString == '1') //in case of '1' turn the LED on and pick display the incoming call
+{ 
+if((140<c<160)&&(500<a<530)&&(530<b<550))
+{
+lcd.setCursor(0, 1);
+lcd.write("INCOMING CALL");
+digitalWrite(12, HIGH);
+delay(1000);
+}
+
+
+if((140<c<160)&&(500<a<530)&&(b>535)) //input values according to gyro
+{
+lcd.setCursor(0, 1);
+digitalWrite(13, HIGH);
+lcd.write("CALL RECEIVED"); // Receive Call
+delay(5000);
+//mySerial.write('y');
+mySerial.println("y");
+Serial.print("yes");
+}
+
+
+if((540<a)||((a<500))&&(500<b<534)&&(140<c<160)) //input values by gyro
+{ 
+lcd.setCursor(0, 1);
+digitalWrite(13, LOW);
+lcd.write("CALL REJECTED"); // Reject Call
+delay(5000);
+//mySerial.write("n");
+mySerial.println("n");
+Serial.print("no"); 
+}
+}
+
+else if(inputString == '0') //incase of '0' turn the LED off and display normal state
+{ 
+lcd.setCursor(0, 1);
+digitalWrite(13, LOW);
+lcd.write("CALL END ");
+}
+}
